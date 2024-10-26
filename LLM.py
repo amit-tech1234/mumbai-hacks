@@ -2,7 +2,7 @@ import json
 import openai
 import os
 
-from getRAG import load_user_data , retrieve_relevant_documents
+from RAG import load_user_data , retrieve_relevant_documents
 
 # Constants
 API_KEY = '<APIKEY>'  # Replace with your actual API key
