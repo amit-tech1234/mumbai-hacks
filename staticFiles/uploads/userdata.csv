@@ -1,0 +1,6 @@
+user_name,user_id,location,cultural_interests,email_open_rate,email_click_rate,push_opt_in,push_interaction_rate,inapp_interaction_rate
+Pariston Hill,16,San Francisco,"Jazz, Theater",12,7,True,20,30
+Ranjeet Patil,17,Mumbai,"Jazz, Bollywood",18,14,true,200,300
+Alex Giselle,18,Los Angeles,"Rock, Theater",42,72,true,40,30
+Bhavesh Sarwar,19,Pune,"Salsa, Bollywood",122,79,true,80,60
+Yash Goyal,15,Delhi,"punjabi, Theater",120,72,true,70,0
