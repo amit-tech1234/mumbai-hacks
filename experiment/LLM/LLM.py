@@ -18,15 +18,15 @@ format_structure = {
   "churn_status": {
     "risk": "Medium",
     "email_engagement": {
-      "open_rate": "10%",
-      "click_rate": "5%"
+      "open_rate": "10",
+      "click_rate": "5"
     },
     "push_notification_engagement": {
       "opt_in": True,
-      "interaction_rate": "15%"
+      "interaction_rate": "15"
     },
     "inapp_message_engagement": {
-      "interaction_rate": "25%"
+      "interaction_rate": "25"
     }
   },
   "churn_reasons": [

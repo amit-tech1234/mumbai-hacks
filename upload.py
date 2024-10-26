@@ -10,6 +10,8 @@ import csv
 import json
 import pandas as pd
 from werkzeug.utils import secure_filename
+import glob
+from datetime import datetime
 
 UPLOAD_FOLDER = os.path.join('staticFiles', 'uploads')
 
@@ -25,15 +27,16 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.secret_key = 'This is your secret key to utilize session in Flask'
 
 format_structure = {
-"user_id": 16,  # Use a user_id that exists in your dataset
-"user_name": "Amit",
-"location": "San Francisco",
-"cultural_interests": "Jazz, Theater",
-"email_open_rate": 12,  # Example values
-"email_click_rate": 7,
-"push_opt_in": True,
-"push_interaction_rate": 20,
-"inapp_interaction_rate": 30,
+  "user_id": 16,  # Use a user_id that exists in your dataset
+  "user_name": "Amit",
+  "location": "San Francisco",
+  "cultural_interests": "Jazz, Theater",
+  "language_preference":"English, Spanish",
+  "email_open_rate": 12,  # Example values
+  "email_click_rate": 7,
+  "push_opt_in": True,
+  "push_interaction_rate": 20,
+  "inapp_interaction_rate": 30,
   "churn_status": {
     "risk": "Medium",
     "email_engagement": {
@@ -78,6 +81,11 @@ format_structure = {
           "date": "2024-10-20",
           "content": "Notify users about local screenings of new Bollywood releases."
         }
+      ],"regional_language_content": [
+        {
+          "language": "English",
+          "content": "Feature special Diwali movie recommendations and celebration ideas."
+        }
       ]
     },
     "push_notifications": {
@@ -103,6 +111,11 @@ format_structure = {
           "date": "2024-10-30",
           "content": "Invite users to local film festival events and screenings."
         }
+      ],"regional_language_content": [
+        {
+          "language": "Spanish",
+          "content": "Incluye recomendaciones especiales de películas de Diwali e ideas de celebración."
+        }
       ]
     },
     "sms": {
@@ -122,6 +135,11 @@ format_structure = {
           "date": "2024-11-11",
           "content": "Share ideas for celebrating Diwali, including movie recommendations."
         }
+      ],"regional_language_content": [
+        {
+          "language": "English",
+          "content": "Feature special Diwali movie recommendations and celebration ideas."
+        }
       ]
     },
     "whatsapp": {
@@ -139,6 +157,11 @@ format_structure = {
           "event_name": "Bollywood Movie Releases",
           "date": "2024-10-20",
           "content": "Notify users about premieres and provide ticket offers."
+        }
+      ],"regional_language_content": [
+        {
+          "language": "English",
+          "content": "Feature special Diwali movie recommendations and celebration ideas."
         }
       ]
     }
@@ -371,6 +394,16 @@ targetUserNew = {
 #                 data.append(strategy)
 #            return jsonify({'data': data})
 
+def clear_directory(directory):
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        try:
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+            elif os.path.isdir(file_path):
+                os.rmdir(file_path)  # Use os.rmdir() for directories (if empty)
+        except Exception as e:
+            print(f'Error removing {file_path}: {e}')
 
 @app.route('/', methods=['GET', 'POST'])
 def uploadFile():
@@ -380,11 +413,12 @@ def uploadFile():
         f = request.files.get('file')
 
         # Extracting uploaded file name
-        data_filename = secure_filename(f.filename)
-
+        #data_filename = secure_filename(f.filename)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        data_filename = f"file_{timestamp}.csv"
         f.save(os.path.join(app.config['UPLOAD_FOLDER'],
                             data_filename))
-
+        print(data_filename)
         session['uploaded_data_file_path'] = os.path.join(app.config['UPLOAD_FOLDER'],data_filename)
         print(data_filename)
 
@@ -395,7 +429,7 @@ def uploadFile():
              # Define the feature columns we want to base similarity on
         feature_columns = [
                  'email_open_rate', 'email_click_rate', 'push_opt_in',
-                 'push_interaction_rate', 'inapp_interaction_rate' # Include only numerical fields for distance computation
+                 'push_interaction_rate', 'inapp_interaction_rate','last_interaction_days','average_session_length' # Include only numerical fields for distance computation
              ]
 
 #         target_user = {
@@ -414,13 +448,15 @@ def uploadFile():
         #userCSV = pd.read_csv(data_file_path)
         for index , row in userCSV.iterrows():
             #print(row.to_json())
-            relevant_docs = retrieve_relevant_documents(test_user_data, row.to_json(), feature_columns, top_n=2)
+            relevant_docs = retrieve_relevant_documents(test_user_data, row.to_json(), feature_columns, top_n=1)
             print('------------- Relevant docs ------------------')
             print(relevant_docs)
-            print('-----------------------------------------')
+            #print('-----------------------------------------')
             strategy = generate_retention_strategy_with_context(row.to_json() , relevant_docs)
-            print(f"Recommended Retention Strategy: {strategy}")
+            #print(f"Recommended Retention Strategy: {strategy}")
             data.append(strategy)
+        print(data)
+        print('-----------------------------------------')
         return jsonify({'data': data})
     return render_template("index.html")
 

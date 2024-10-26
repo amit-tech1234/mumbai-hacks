@@ -5,7 +5,7 @@ import os
 from getRAG import load_user_data , retrieve_relevant_documents
 
 # Constants
-API_KEY = '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'  # Replace with your actual API key
+API_KEY = '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'  # Replace with your actual API key
 BASE_URL = "https://api.groq.com/openai/v1"
 
 # Initialize OpenAI client
@@ -19,6 +19,7 @@ format_structure = {
   "user_name": "Amit",
   "location": "San Francisco",
   "cultural_interests": "Jazz, Theater",
+  "language_preference":"English, Spanish",
   "email_open_rate": 12,  # Example values
   "email_click_rate": 7,
   "push_opt_in": True,
@@ -68,6 +69,11 @@ format_structure = {
           "date": "2024-10-20",
           "content": "Notify users about local screenings of new Bollywood releases."
         }
+      ],"regional_language_content": [
+        {
+          "language": "English",
+          "content": "Feature special Diwali movie recommendations and celebration ideas."
+        }
       ]
     },
     "push_notifications": {
@@ -93,6 +99,11 @@ format_structure = {
           "date": "2024-10-30",
           "content": "Invite users to local film festival events and screenings."
         }
+      ],"regional_language_content": [
+        {
+          "language": "Spanish",
+          "content": "Incluye recomendaciones especiales de películas de Diwali e ideas de celebración."
+        }
       ]
     },
     "sms": {
@@ -112,6 +123,11 @@ format_structure = {
           "date": "2024-11-11",
           "content": "Share ideas for celebrating Diwali, including movie recommendations."
         }
+      ],"regional_language_content": [
+        {
+          "language": "English",
+          "content": "Feature special Diwali movie recommendations and celebration ideas."
+        }
       ]
     },
     "whatsapp": {
@@ -130,6 +146,11 @@ format_structure = {
           "date": "2024-10-20",
           "content": "Notify users about premieres and provide ticket offers."
         }
+      ],"regional_language_content": [
+        {
+          "language": "English",
+          "content": "Feature special Diwali movie recommendations and celebration ideas."
+        }
       ]
     }
   }
@@ -146,7 +167,7 @@ def generate_retention_strategy_with_context(user_data, relevant_docs):
         messages=[
             {
                 "role": "system",
-                "content": f"Using the following user data and similar profiles, suggest a retention strategy: {json.dumps(context_data)}"
+                "content": f"Using the following user data and similar profiles, suggest a retention strategy: {json.dumps(context_data)}, calculate the churn status with reason based on last_interaction_days & average_session_length,along with user details also add regional_language_content translated based on user's language_preference including all channels"
             },
             {
                 "role": "user",
