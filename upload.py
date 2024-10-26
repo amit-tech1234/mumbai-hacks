@@ -4,7 +4,7 @@ import pandas as pd
 from flask import *
 from flask_cors import CORS
 from LLM import generate_retention_strategy_with_context
-from getRAG import *
+from RAG import *
 import os
 import csv
 import json
@@ -25,6 +25,52 @@ CORS(app)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 app.secret_key = 'This is your secret key to utilize session in Flask'
+
+@app.route('/', methods=['GET', 'POST'])
+def uploadFile():
+    data = []
+    if request.method == 'POST':
+      # upload file flask
+        f = request.files.get('file')
+        # Extracting uploaded file name
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        data_filename = f"file_{timestamp}.csv"
+        f.save(os.path.join(app.config['UPLOAD_FOLDER'],
+                            data_filename))
+        print(data_filename)
+        session['uploaded_data_file_path'] = os.path.join(app.config['UPLOAD_FOLDER'],data_filename)
+        print(data_filename)
+
+         # Load user interaction data from CSV
+        csv_file = "user_engagement_data.csv"  # Path to your CSV file
+        test_user_data = load_user_data(csv_file)
+
+             # Define the feature columns we want to base similarity on
+        feature_columns = [
+                 'email_open_rate', 'email_click_rate', 'push_opt_in',
+                 'push_interaction_rate', 'inapp_interaction_rate','last_interaction_days','average_session_length' # Include only numerical fields for distance computation
+             ]
+
+        data_file_path = session.get('uploaded_data_file_path', None)
+        print(data_file_path)
+        userCSV = pd.read_csv(data_file_path)
+        for index , row in userCSV.iterrows():
+            relevant_docs = retrieve_relevant_documents(test_user_data, row.to_json(), feature_columns, top_n=1)
+            strategy = generate_retention_strategy_with_context(row.to_json() , relevant_docs)
+            data.append(strategy)
+        print(data)
+        return jsonify({'data': data})
+    return render_template("index.html")
+
+@app.route('/show_data')
+def showData():
+    # Uploaded File Path
+    data_file_path = session.get('uploaded_data_file_path', None)
+    # read csv
+    uploaded_df = pd.read_csv(data_file_path, encoding='unicode_escape')
+    # Converting to html Table
+    uploaded_df_html = uploaded_df.to_html()
+    return render_template('show_csv_data.html',data_var=uploaded_df_html)
 
 format_structure = {
   "user_id": 16,  # Use a user_id that exists in your dataset
@@ -353,123 +399,6 @@ targetUserNew = {
             }
         }
         }
-# @app.route('/', methods=['GET', 'POST'])
-# def uploadFile():
-#     if request.method == 'POST':
-#       # upload file flask
-#         f = request.files.get('file')
-#
-#         # Extracting uploaded file name
-#         data_filename = secure_filename(f.filename)
-#
-#         f.save(os.path.join(app.config['UPLOAD_FOLDER'],
-#                             data_filename))
-#
-#         session['uploaded_data_file_path'] = os.path.join(app.config['UPLOAD_FOLDER'],data_filename)
-#
-#         return render_template('index2.html')
-#     return render_template("index.html")
-
-
-# @app.route('/', methods=['GET', 'POST'])
-# def uploadFile():
-#     if request.method == 'POST':
-#       # upload file flask
-#         f = request.files.get('file')
-#
-#         # Extracting uploaded file name
-#         data_filename = secure_filename(f.filename)
-#
-#         f.save(os.path.join(app.config['UPLOAD_FOLDER'],
-#                             data_filename))
-#
-#         session['uploaded_data_file_path'] = os.path.join(app.config['UPLOAD_FOLDER'],data_filename)
-#         print(data_filename)
-#
-#         data = []
-#         with open(data_filename, 'r') as csv_file:
-#             csv_reader = csv.DictReader(csv_file)
-#             for row in csv_reader:
-#                 strategy = generate_retention_strategy_with_context(targetUserNew , relevant_data)
-#                 data.append(strategy)
-#            return jsonify({'data': data})
-
-def clear_directory(directory):
-    for filename in os.listdir(directory):
-        file_path = os.path.join(directory, filename)
-        try:
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-            elif os.path.isdir(file_path):
-                os.rmdir(file_path)  # Use os.rmdir() for directories (if empty)
-        except Exception as e:
-            print(f'Error removing {file_path}: {e}')
-
-@app.route('/', methods=['GET', 'POST'])
-def uploadFile():
-    data = []
-    if request.method == 'POST':
-      # upload file flask
-        f = request.files.get('file')
-
-        # Extracting uploaded file name
-        #data_filename = secure_filename(f.filename)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        data_filename = f"file_{timestamp}.csv"
-        f.save(os.path.join(app.config['UPLOAD_FOLDER'],
-                            data_filename))
-        print(data_filename)
-        session['uploaded_data_file_path'] = os.path.join(app.config['UPLOAD_FOLDER'],data_filename)
-        print(data_filename)
-
-         # Load user interaction data from CSV
-        csv_file = "user_engagement_data.csv"  # Path to your CSV file
-        test_user_data = load_user_data(csv_file)
-
-             # Define the feature columns we want to base similarity on
-        feature_columns = [
-                 'email_open_rate', 'email_click_rate', 'push_opt_in',
-                 'push_interaction_rate', 'inapp_interaction_rate','last_interaction_days','average_session_length' # Include only numerical fields for distance computation
-             ]
-
-#         target_user = {
-#                  "user_id": 16,  # Use a user_id that exists in your dataset
-#                  "location": "San Francisco",
-#                  "cultural_interests": "Jazz, Theater",
-#                  "email_open_rate": 12,  # Example values
-#                  "email_click_rate": 7,
-#                  "push_opt_in": True,
-#                  "push_interaction_rate": 20,
-#                  "inapp_interaction_rate": 30
-#              }
-        data_file_path = session.get('uploaded_data_file_path', None)
-        print(data_file_path)
-        userCSV = pd.read_csv(data_file_path)
-        #userCSV = pd.read_csv(data_file_path)
-        for index , row in userCSV.iterrows():
-            #print(row.to_json())
-            relevant_docs = retrieve_relevant_documents(test_user_data, row.to_json(), feature_columns, top_n=1)
-            print('------------- Relevant docs ------------------')
-            print(relevant_docs)
-            #print('-----------------------------------------')
-            strategy = generate_retention_strategy_with_context(row.to_json() , relevant_docs)
-            #print(f"Recommended Retention Strategy: {strategy}")
-            data.append(strategy)
-        print(data)
-        print('-----------------------------------------')
-        return jsonify({'data': data})
-    return render_template("index.html")
-
-@app.route('/show_data')
-def showData():
-    # Uploaded File Path
-    data_file_path = session.get('uploaded_data_file_path', None)
-    # read csv
-    uploaded_df = pd.read_csv(data_file_path, encoding='unicode_escape')
-    # Converting to html Table
-    uploaded_df_html = uploaded_df.to_html()
-    return render_template('show_csv_data.html',data_var=uploaded_df_html)
-
 
 if __name__ == '__main__':
     app.run(debug=True)
